@@ -22,8 +22,11 @@ func main() {
 		if err != nil {
 			log.Fatalf("Unable to accept connection. Error: %s", err.Error())
 		}
+		c := client{connection, ""}
 
-		log.Printf("Connections IP address is : %s", connection.RemoteAddr().(*net.TCPAddr).IP.String())
+		msg := "\n\nWelcome to the chat server"
+		c.sendMessage(msg)
+		c.receiveMessage()
 	}
 
 }
