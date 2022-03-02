@@ -8,6 +8,8 @@ import (
 const PORT = "8080"
 
 func main() {
+	s := newServer()
+	go s.execCommands()
 	listener, err := net.Listen("tcp", ":"+PORT)
 
 	if err != nil {
@@ -22,11 +24,11 @@ func main() {
 		if err != nil {
 			log.Fatalf("Unable to accept connection. Error: %s", err.Error())
 		}
-		c := client{connection, ""}
-
 		msg := "\n\nWelcome to the chat server"
+		c := s.newClient(connection)
+
 		c.sendMessage(msg)
-		c.receiveMessage()
+		go c.receiveMessage()
 	}
 
 }
