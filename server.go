@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net"
 	"strings"
 	"time"
@@ -34,19 +33,20 @@ func (s *server) execCommands() {
 		case CMD_NICK:
 			s.changeNick(c.client, c.args)
 		case CMD_BROADCAST:
-			s.broadcastMessage(c.args)
+			s.broadcastMessage(c.client.nickname, strings.Join(c.args, " "))
 		}
 	}
 }
 
 func (s *server) changeNick(c *client, args []string) {
+	msg := c.nickname + " changed their nickname to " + args[0]
+	s.broadcastMessage("Server", msg)
 	c.nickname = args[0]
-	c.sendMessage(fmt.Sprintf("\nYour new nickname is %s", c.nickname))
 }
 
-func (s *server) broadcastMessage(args []string) {
-	t := time.Now().Format("2006-01-02 15:04:05")
+func (s *server) broadcastMessage(author string, msg string) {
+	t := time.Now().Format("15:04:05")
 	for _, c := range s.clients {
-		c.sendMessage("\n" + t + " | " + c.nickname + ": " + strings.Join(args, " "))
+		c.sendMessage("\n" + t + " | " + author + ": " + msg)
 	}
 }
