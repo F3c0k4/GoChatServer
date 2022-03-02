@@ -10,7 +10,7 @@ import (
 type client struct {
 	conn     net.Conn
 	nickname string
-	cmd      chan command
+	cmd      chan<- command
 }
 
 func (c *client) sendMessage(msg string) {
@@ -29,6 +29,7 @@ func (c *client) receiveMessage() {
 		args := strings.Split(msg, " ")
 
 		if args[0] == "/nick" {
+
 			c.cmd <- command{
 				cmd_id: CMD_NICK,
 				args:   args[1:],

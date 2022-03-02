@@ -4,8 +4,6 @@ type CommandId int
 
 const (
 	CMD_NICK CommandId = iota
-	CMD_JOIN
-	CMD_ROOMS
 	CMD_EXIT
 	CMD_BROADCAST
 )

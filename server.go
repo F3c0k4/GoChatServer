@@ -39,14 +39,20 @@ func (s *server) execCommands() {
 }
 
 func (s *server) changeNick(c *client, args []string) {
-	msg := c.nickname + " changed their nickname to " + args[0]
-	s.broadcastMessage("Server", msg)
-	c.nickname = args[0]
+	if len(args) > 0 {
+		msg := c.nickname + " changed their nickname to " + args[0]
+		s.broadcastMessage("Server", msg)
+		c.nickname = args[0]
+	} else {
+		msg := "\nName argument missing, please try again. Usage /nick Nickname "
+		c.sendMessage(msg)
+	}
+
 }
 
 func (s *server) broadcastMessage(author string, msg string) {
 	t := time.Now().Format("15:04:05")
 	for _, c := range s.clients {
-		c.sendMessage("\n" + t + " | " + author + ": " + msg)
+		c.sendMessage("\n" + t + " " + author + ": " + msg)
 	}
 }
