@@ -29,7 +29,6 @@ func (c *client) receiveMessage() {
 		args := strings.Split(msg, " ")
 
 		if args[0] == "/nick" {
-
 			c.cmd <- command{
 				cmd_id: CMD_NICK,
 				args:   args[1:],

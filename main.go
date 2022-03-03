@@ -25,6 +25,7 @@ func main() {
 			log.Fatalf("Unable to accept connection. Error: %s", err.Error())
 		}
 		msg := "\n\nWelcome to the chat server"
+		msg += "\nCommands: /nick new_nickname - Change your nickname"
 		c := s.newClient(connection)
 
 		c.sendMessage(msg)

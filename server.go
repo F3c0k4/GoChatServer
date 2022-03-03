@@ -44,7 +44,7 @@ func (s *server) changeNick(c *client, args []string) {
 		s.broadcastMessage("Server", msg)
 		c.nickname = args[0]
 	} else {
-		msg := "\nName argument missing, please try again. Usage /nick Nickname "
+		msg := "\nName argument missing, please try again. Usage /nick new_nickname "
 		c.sendMessage(msg)
 	}
 
