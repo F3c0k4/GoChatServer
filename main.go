@@ -8,6 +8,9 @@ import (
 const PORT = "8080"
 
 func main() {
+	db := initDatabase()
+	defer db.Close()
+
 	s := newServer()
 	go s.execCommands()
 	listener, err := net.Listen("tcp", ":"+PORT)
