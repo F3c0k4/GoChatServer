@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"strconv"
 
@@ -38,4 +39,23 @@ func initDatabase() *sql.DB {
 	}
 
 	return db
+}
+
+func addClient(db *sql.DB, client *client) {
+	var ip string
+	if addr, ok := client.conn.RemoteAddr().(*net.TCPAddr); ok {
+		ip = addr.IP.String()
+	} else {
+		log.Println("Cannot get ip address")
+	}
+	sqlStatement := `
+	INSERT INTO clients_table (ip_address, nickname)
+	VALUES ($1, $2)`
+	_, err := db.Exec(sqlStatement, ip, client.nickname)
+	if err != nil {
+		log.Printf("\nError inserting record into database table. %s", err.Error())
+	} else {
+		log.Println("Successfully added record to database table")
+	}
+
 }
