@@ -12,6 +12,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type db_client struct {
+	ip       string
+	nickname string
+}
+
 func initDatabase() *sql.DB {
 
 	err := godotenv.Load("credentials.env")
@@ -58,4 +63,28 @@ func addClient(db *sql.DB, client *client) {
 		log.Println("Successfully added record to database table")
 	}
 
+}
+
+func getClients(db *sql.DB) []db_client {
+	sqlStatement := `SELECT * FROM clients_table`
+	var ret []db_client
+	rows, err := db.Query(sqlStatement)
+	if err != nil {
+		log.Printf("Error getting records from table. %s", err.Error())
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var ip string
+		var nick string
+		err = rows.Scan(&ip, &nick)
+		if err != nil {
+			panic(err)
+		}
+		ret = append(ret, db_client{
+			ip:       ip,
+			nickname: nick,
+		})
+	}
+
+	return ret
 }

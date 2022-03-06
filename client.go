@@ -11,6 +11,7 @@ type client struct {
 	conn     net.Conn
 	nickname string
 	cmd      chan<- command
+	ip       string
 }
 
 func (c *client) sendMessage(msg string) {
