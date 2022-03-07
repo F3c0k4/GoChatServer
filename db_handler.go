@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"strconv"
 
@@ -17,7 +16,12 @@ type db_client struct {
 	nickname string
 }
 
-func initDatabase() *sql.DB {
+type db_handler struct {
+	db         *sql.DB
+	db_clients []db_client
+}
+
+func (dbh *db_handler) initDatabase() {
 
 	err := godotenv.Load("credentials.env")
 	if err != nil {
@@ -43,20 +47,14 @@ func initDatabase() *sql.DB {
 		log.Printf("\nError when trying to ping the database. %s", err.Error())
 	}
 
-	return db
+	dbh.db = db
 }
 
-func addClient(db *sql.DB, client *client) {
-	var ip string
-	if addr, ok := client.conn.RemoteAddr().(*net.TCPAddr); ok {
-		ip = addr.IP.String()
-	} else {
-		log.Println("Cannot get ip address")
-	}
+func (dbh *db_handler) addClient(client db_client) {
 	sqlStatement := `
 	INSERT INTO clients_table (ip_address, nickname)
 	VALUES ($1, $2)`
-	_, err := db.Exec(sqlStatement, ip, client.nickname)
+	_, err := dbh.db.Exec(sqlStatement, client.ip, client.nickname)
 	if err != nil {
 		log.Printf("\nError inserting record into database table. %s", err.Error())
 	} else {
@@ -65,10 +63,10 @@ func addClient(db *sql.DB, client *client) {
 
 }
 
-func getClients(db *sql.DB) []db_client {
+func (dbh *db_handler) pullClients() {
 	sqlStatement := `SELECT * FROM clients_table`
-	var ret []db_client
-	rows, err := db.Query(sqlStatement)
+	var res []db_client
+	rows, err := dbh.db.Query(sqlStatement)
 	if err != nil {
 		log.Printf("Error getting records from table. %s", err.Error())
 	}
@@ -80,11 +78,11 @@ func getClients(db *sql.DB) []db_client {
 		if err != nil {
 			panic(err)
 		}
-		ret = append(ret, db_client{
+		res = append(res, db_client{
 			ip:       ip,
 			nickname: nick,
 		})
 	}
 
-	return ret
+	dbh.db_clients = res
 }

@@ -8,11 +8,11 @@ import (
 const PORT = "8080"
 
 func main() {
-	db := initDatabase()
-	defer db.Close()
-
-	s := newServer()
-	go s.execCommands()
+	var handler db_handler
+	handler.initDatabase()
+	handler.pullClients()
+	server := newServer(&handler)
+	go server.execCommands()
 	listener, err := net.Listen("tcp", ":"+PORT)
 
 	if err != nil {
@@ -29,7 +29,7 @@ func main() {
 		}
 		msg := "\n\nWelcome to the chat server"
 		msg += "\nCommands: /nick new_nickname - Change your nickname"
-		c := s.newClient(connection)
+		c := server.newClient(connection)
 
 		c.sendMessage(msg)
 		go c.receiveMessage()

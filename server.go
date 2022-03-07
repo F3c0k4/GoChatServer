@@ -9,13 +9,14 @@ import (
 type server struct {
 	commands        chan command
 	current_clients []client
-	all_clients     []db_client
-	new_clients     []db_client
+	handler         db_handler
 }
 
-func newServer(db_clients *[]db_client) *server {
+func newServer(handler *db_handler) *server {
+
 	return &server{
 		commands: make(chan command),
+		handler:  *handler,
 	}
 }
 
@@ -23,7 +24,7 @@ func (s *server) newClient(conn net.Conn) client {
 	var alreadyExists bool
 	client_ip := conn.RemoteAddr().(*net.TCPAddr).IP.String()
 	nickname := "Anonymous"
-	for _, cli := range s.all_clients {
+	for _, cli := range s.handler.db_clients {
 		if cli.ip == client_ip {
 			nickname = cli.nickname
 			alreadyExists = true
@@ -37,10 +38,11 @@ func (s *server) newClient(conn net.Conn) client {
 	}
 	s.current_clients = append(s.current_clients, c)
 	if !alreadyExists {
-		s.new_clients = append(s.new_clients, db_client{
+		new_client := db_client{
 			ip:       client_ip,
 			nickname: nickname,
-		})
+		}
+		s.handler.addClient(new_client)
 	}
 	return c
 }
