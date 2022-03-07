@@ -7,24 +7,42 @@ import (
 )
 
 type server struct {
-	commands chan command
-	clients  []*client
+	commands        chan command
+	current_clients []client
+	all_clients     []db_client
+	new_clients     []db_client
 }
 
-func newServer() *server {
+func newServer(db_clients *[]db_client) *server {
 	return &server{
 		commands: make(chan command),
 	}
 }
 
-func (s *server) newClient(conn net.Conn) *client {
+func (s *server) newClient(conn net.Conn) client {
+	var alreadyExists bool
+	client_ip := conn.RemoteAddr().(*net.TCPAddr).IP.String()
+	nickname := "Anonymous"
+	for _, cli := range s.all_clients {
+		if cli.ip == client_ip {
+			nickname = cli.nickname
+			alreadyExists = true
+		}
+	}
+
 	c := client{
 		conn:     conn,
-		nickname: "Anonymous",
+		nickname: nickname,
 		cmd:      s.commands,
 	}
-	s.clients = append(s.clients, &c)
-	return &c
+	s.current_clients = append(s.current_clients, c)
+	if !alreadyExists {
+		s.new_clients = append(s.new_clients, db_client{
+			ip:       client_ip,
+			nickname: nickname,
+		})
+	}
+	return c
 }
 
 func (s *server) execCommands() {
@@ -52,7 +70,7 @@ func (s *server) changeNick(c *client, args []string) {
 
 func (s *server) broadcastMessage(author string, msg string) {
 	t := time.Now().Format("15:04:05")
-	for _, c := range s.clients {
+	for _, c := range s.current_clients {
 		c.sendMessage("\n" + t + " " + author + ": " + msg)
 	}
 }
