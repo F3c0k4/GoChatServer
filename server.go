@@ -9,14 +9,14 @@ import (
 type server struct {
 	commands        chan command
 	current_clients []client
-	handler         db_handler
+	handler         *db_handler
 }
 
 func newServer(handler *db_handler) *server {
 
 	return &server{
 		commands: make(chan command),
-		handler:  *handler,
+		handler:  handler,
 	}
 }
 
@@ -63,6 +63,11 @@ func (s *server) changeNick(c *client, args []string) {
 		msg := c.nickname + " changed their nickname to " + args[0]
 		s.broadcastMessage("Server", msg)
 		c.nickname = args[0]
+		db_cli := db_client{
+			ip:       c.conn.RemoteAddr().(*net.TCPAddr).IP.String(),
+			nickname: c.nickname,
+		}
+		s.handler.updateClientRecord(db_cli)
 	} else {
 		msg := "\nName argument missing, please try again. Usage /nick new_nickname "
 		c.sendMessage(msg)

@@ -63,6 +63,18 @@ func (dbh *db_handler) addClient(client db_client) {
 
 }
 
+func (dbh *db_handler) updateClientRecord(client db_client) {
+	sqlStatement := `
+	UPDATE clients_table
+	SET nickname = $1
+	WHERE ip_address = $2;`
+
+	_, err := dbh.db.Exec(sqlStatement, client.nickname, client.ip)
+	if err != nil {
+		log.Printf("Error updating client record. %s", err.Error())
+	}
+}
+
 func (dbh *db_handler) pullClients() {
 	sqlStatement := `SELECT * FROM clients_table`
 	var res []db_client
