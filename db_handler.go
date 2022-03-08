@@ -50,6 +50,16 @@ func (dbh *db_handler) initDatabase() {
 	dbh.db = db
 }
 
+func (dbh *db_handler) getClient(ip string) *db_client {
+	for _, c := range dbh.db_clients {
+		if c.ip == ip {
+			return &c
+		}
+	}
+
+	return nil
+}
+
 func (dbh *db_handler) addClient(client db_client) {
 	sqlStatement := `
 	INSERT INTO clients_table (ip_address, nickname)
@@ -61,6 +71,7 @@ func (dbh *db_handler) addClient(client db_client) {
 		log.Println("Successfully added record to database table")
 	}
 
+	dbh.db_clients = append(dbh.db_clients, client)
 }
 
 func (dbh *db_handler) updateClientRecord(client db_client) {
