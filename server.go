@@ -6,13 +6,17 @@ import (
 	"time"
 )
 
+// server stores the commands to be executed,
+// the clients currently connected to the server
+// and the handler of the database
 type server struct {
-	commands        chan command
-	current_clients []client
-	handler         *db_handler
+	commands       chan command
+	currentClients []client
+	handler        *dbHandler
 }
 
-func newServer(handler *db_handler) *server {
+// newServer creates and returns a pointer to a new server
+func newServer(handler *dbHandler) *server {
 
 	return &server{
 		commands: make(chan command),
@@ -20,11 +24,15 @@ func newServer(handler *db_handler) *server {
 	}
 }
 
-func (s *server) newClient(conn net.Conn) client {
+// newClient adds a client to the currentClients list and
+// updates the database if the client is new
+func (s *server) newClient(conn net.Conn) {
 	var alreadyExists bool
+	var msg string
 	client_ip := conn.RemoteAddr().(*net.TCPAddr).IP.String()
 	nickname := "Anonymous"
-	for _, cli := range s.handler.db_clients {
+
+	for _, cli := range s.handler.dbClients {
 		if cli.ip == client_ip {
 			nickname = cli.nickname
 			alreadyExists = true
@@ -36,20 +44,28 @@ func (s *server) newClient(conn net.Conn) client {
 		nickname: nickname,
 		cmd:      s.commands,
 	}
-	s.current_clients = append(s.current_clients, c)
+	s.currentClients = append(s.currentClients, c)
 	if !alreadyExists {
-		new_client := db_client{
+		new_client := dbClient{
 			ip:       client_ip,
 			nickname: nickname,
 		}
 		s.handler.addClient(new_client)
+		msg = "\n\nWelcome to the chat server"
+		msg += "\nCommands: /nick new_nickname - Change your nickname"
+	} else {
+		msg = "\n\nWelcome back to the chat server, " + nickname
+		msg += "\nCommands: /nick new_nickname - Change your nickname"
 	}
-	return c
+
+	c.sendMessage(msg)
+	go c.receiveMessage()
 }
 
+// execCommands executes the commands previously saved by the clients
 func (s *server) execCommands() {
 	for c := range s.commands {
-		switch c.cmd_id {
+		switch c.cmdId {
 		case CMD_NICK:
 			s.changeNick(c.client, c.args)
 		case CMD_BROADCAST:
@@ -58,12 +74,14 @@ func (s *server) execCommands() {
 	}
 }
 
+// changeNick changes the nickname of a client and also updates the
+// database
 func (s *server) changeNick(c *client, args []string) {
 	if len(args) > 0 {
 		msg := c.nickname + " changed their nickname to " + args[0]
 		s.broadcastMessage("Server", msg)
 		c.nickname = args[0]
-		db_cli := db_client{
+		db_cli := dbClient{
 			ip:       c.conn.RemoteAddr().(*net.TCPAddr).IP.String(),
 			nickname: c.nickname,
 		}
@@ -75,9 +93,11 @@ func (s *server) changeNick(c *client, args []string) {
 
 }
 
+// boradcastMessage sends a message to all the currently connected
+// clients
 func (s *server) broadcastMessage(author string, msg string) {
 	t := time.Now().Format("15:04:05")
-	for _, c := range s.current_clients {
+	for _, c := range s.currentClients {
 		c.sendMessage("\n" + t + " " + author + ": " + msg)
 	}
 }

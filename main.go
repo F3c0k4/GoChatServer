@@ -8,7 +8,7 @@ import (
 const PORT = "8080"
 
 func main() {
-	var handler db_handler
+	var handler dbHandler
 	handler.initDatabase()
 	handler.pullClients()
 
