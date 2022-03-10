@@ -27,11 +27,11 @@ type dbHandler struct {
 
 // initDatabase loads the credentials of the database from the credentials.env file
 // and attempts to connect to the database
-func (dbh *dbHandler) initDatabase() {
+func (dbh *dbHandler) initDatabase() error {
 
 	err := godotenv.Load("credentials.env")
 	if err != nil {
-		log.Printf("\nError when loading the credentials for the database. %s", err.Error())
+		return fmt.Errorf("\nError when loading the credentials for the database. %w", err)
 	}
 
 	host := os.Getenv("HOST")
@@ -46,14 +46,11 @@ func (dbh *dbHandler) initDatabase() {
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		log.Printf("\nError when trying to open the database. %s", err.Error())
-	}
-	err = db.Ping()
-	if err != nil {
-		log.Printf("\nError when trying to ping the database. %s", err.Error())
+		return fmt.Errorf("\nError when trying to open the database. %w", err)
 	}
 
 	dbh.db = db
+	return nil
 }
 
 // getClient looks up a client based on the ip parameter it receives
