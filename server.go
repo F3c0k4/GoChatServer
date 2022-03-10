@@ -36,9 +36,9 @@ func (s *server) newClient(conn net.Conn) {
 		if cli.ip == client_ip {
 			nickname = cli.nickname
 			alreadyExists = true
+			break
 		}
 	}
-
 	c := client{
 		conn:     conn,
 		nickname: nickname,
@@ -64,12 +64,15 @@ func (s *server) newClient(conn net.Conn) {
 
 // execCommands executes the commands previously saved by the clients
 func (s *server) execCommands() {
+
 	for c := range s.commands {
 		switch c.cmdId {
 		case CMD_NICK:
 			s.changeNick(c.client, c.args)
 		case CMD_BROADCAST:
 			s.broadcastMessage(c.client.nickname, strings.Join(c.args, " "))
+		case CMD_REMOVE_CLIENT:
+			s.removeCurrentClient(c.client)
 		}
 	}
 }
@@ -99,5 +102,15 @@ func (s *server) broadcastMessage(author string, msg string) {
 	t := time.Now().Format("15:04:05")
 	for _, c := range s.currentClients {
 		c.sendMessage("\n" + t + " " + author + ": " + msg)
+	}
+}
+
+// removeCurrentClient removes a client from the currentClients list
+func (s *server) removeCurrentClient(c *client) {
+	for i, cli := range s.currentClients {
+		if c.conn == cli.conn {
+			s.currentClients = append(s.currentClients[:i], s.currentClients[i+1:]...)
+			break
+		}
 	}
 }

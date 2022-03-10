@@ -7,6 +7,7 @@ const (
 	CMD_NICK CommandId = iota
 	CMD_EXIT
 	CMD_BROADCAST
+	CMD_REMOVE_CLIENT
 )
 
 // command stores information about the service to be provided

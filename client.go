@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 )
@@ -26,7 +27,15 @@ func (c *client) receiveMessage() {
 	for {
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 
-		if err != nil {
+		if err == io.EOF {
+			c.conn.Close()
+			c.cmd <- command{
+				cmdId:  CMD_REMOVE_CLIENT,
+				args:   nil,
+				client: c,
+			}
+			return
+		} else if err != nil {
 			c.sendMessage(fmt.Sprintf("Error while trying to receive your message: %s", err.Error()))
 		}
 
