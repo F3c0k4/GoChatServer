@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"database/sql"
@@ -11,25 +11,25 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// dbClient stores the information of a client
+// DbClient stores the information of a client
 // in a way that mirrors a database record
-type dbClient struct {
+type DbClient struct {
 	ip       string
 	nickname string
 }
 
-// dbHandler contains information which is useful
+// DbHandler contains information which is useful
 // in contacting the database and keeping track of the clients
-type dbHandler struct {
+type DbHandler struct {
 	db        *sql.DB
-	dbClients []dbClient
+	dbClients []DbClient
 }
 
-// initDatabase loads the credentials of the database from the credentials.env file
+// InitDatabase loads the credentials of the database from the credentials.env file
 // and attempts to connect to the database
-func (dbh *dbHandler) initDatabase() error {
+func (dbh *DbHandler) InitDatabase() error {
 
-	err := godotenv.Load("credentials.env")
+	err := godotenv.Load("../assets/credentials.env")
 	if err != nil {
 		return fmt.Errorf("\nError when loading the credentials for the database. %w", err)
 	}
@@ -55,7 +55,7 @@ func (dbh *dbHandler) initDatabase() error {
 
 // getClient looks up a client based on the ip parameter it receives
 // and returns a pointer to the db_client
-func (dbh *dbHandler) getClient(ip string) *dbClient {
+func (dbh *DbHandler) getClient(ip string) *DbClient {
 	for _, c := range dbh.dbClients {
 		if c.ip == ip {
 			return &c
@@ -66,7 +66,7 @@ func (dbh *dbHandler) getClient(ip string) *dbClient {
 }
 
 // addClient adds a new client record to the database
-func (dbh *dbHandler) addClient(client dbClient) {
+func (dbh *DbHandler) addClient(client DbClient) {
 	sqlStatement := `
 	INSERT INTO clients_table (ip_address, nickname)
 	VALUES ($1, $2)`
@@ -82,7 +82,7 @@ func (dbh *dbHandler) addClient(client dbClient) {
 
 // updateClientRecord updates the database with the data
 // of the client object it receives
-func (dbh *dbHandler) updateClientRecord(client dbClient) {
+func (dbh *DbHandler) updateClientRecord(client DbClient) {
 	sqlStatement := `
 	UPDATE clients_table
 	SET nickname = $1
@@ -94,11 +94,11 @@ func (dbh *dbHandler) updateClientRecord(client dbClient) {
 	}
 }
 
-// pullClients loads data from the database into the
+// PullClients loads data from the database into the
 // dbHandlers dbClients slice
-func (dbh *dbHandler) pullClients() {
+func (dbh *DbHandler) PullClients() {
 	sqlStatement := `SELECT * FROM clients_table`
-	var res []dbClient
+	var res []DbClient
 	rows, err := dbh.db.Query(sqlStatement)
 	if err != nil {
 		log.Printf("Error getting records from table. %s", err.Error())
@@ -111,7 +111,7 @@ func (dbh *dbHandler) pullClients() {
 		if err != nil {
 			panic(err)
 		}
-		res = append(res, dbClient{
+		res = append(res, DbClient{
 			ip:       ip,
 			nickname: nick,
 		})

@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"net"
@@ -12,11 +12,11 @@ import (
 type server struct {
 	commands       chan command
 	currentClients []client
-	handler        *dbHandler
+	handler        *DbHandler
 }
 
-// newServer creates and returns a pointer to a new server
-func newServer(handler *dbHandler) *server {
+// NewServer creates and returns a pointer to a new server
+func NewServer(handler *DbHandler) *server {
 
 	return &server{
 		commands: make(chan command),
@@ -24,9 +24,9 @@ func newServer(handler *dbHandler) *server {
 	}
 }
 
-// newClient adds a client to the currentClients list and
+// NewClient adds a client to the currentClients list and
 // updates the database if the client is new
-func (s *server) newClient(conn net.Conn) {
+func (s *server) NewClient(conn net.Conn) {
 	var alreadyExists bool
 	var msg string
 	client_ip := conn.RemoteAddr().(*net.TCPAddr).IP.String()
@@ -46,7 +46,7 @@ func (s *server) newClient(conn net.Conn) {
 	}
 	s.currentClients = append(s.currentClients, c)
 	if !alreadyExists {
-		new_client := dbClient{
+		new_client := DbClient{
 			ip:       client_ip,
 			nickname: nickname,
 		}
@@ -62,8 +62,8 @@ func (s *server) newClient(conn net.Conn) {
 	go c.receiveMessage()
 }
 
-// execCommands executes the commands previously saved by the clients
-func (s *server) execCommands() {
+// ExecCommands executes the commands previously saved by the clients
+func (s *server) ExecCommands() {
 
 	for c := range s.commands {
 		switch c.cmdId {
@@ -84,7 +84,7 @@ func (s *server) changeNick(c *client, args []string) {
 		msg := c.nickname + " changed their nickname to " + args[0]
 		s.broadcastMessage("Server", msg)
 		c.nickname = args[0]
-		db_cli := dbClient{
+		db_cli := DbClient{
 			ip:       c.conn.RemoteAddr().(*net.TCPAddr).IP.String(),
 			nickname: c.nickname,
 		}

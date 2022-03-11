@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GoChatServer/pkg/server"
 	"log"
 	"net"
 )
@@ -8,14 +9,14 @@ import (
 const PORT = "8080"
 
 func main() {
-	var handler dbHandler
+	var handler server.DbHandler
 
-	err := handler.initDatabase()
+	err := handler.InitDatabase()
 	handleFatalError(err, "Unable to initiate database connection.")
-	handler.pullClients()
+	handler.PullClients()
 
-	server := newServer(&handler)
-	go server.execCommands()
+	server := server.NewServer(&handler)
+	go server.ExecCommands()
 
 	listener, err := net.Listen("tcp", ":"+PORT)
 	handleFatalError(err, "Unable to start server. ")
@@ -26,7 +27,7 @@ func main() {
 	for {
 		connection, err := listener.Accept()
 		handleFatalError(err, "Unable to accept connection.")
-		server.newClient(connection)
+		server.NewClient(connection)
 	}
 }
 
