@@ -28,6 +28,7 @@ type DbHandler struct {
 // InitDatabase loads the credentials of the database from the credentials.env file
 // and attempts to connect to the database
 func (dbh *DbHandler) InitDatabase() error {
+	var db *sql.DB
 
 	err := godotenv.Load("../assets/credentials.env")
 	if err != nil {
@@ -44,12 +45,18 @@ func (dbh *DbHandler) InitDatabase() error {
 		"password=%s dbname=%s sslmode=disable",
 		host, port, username, password, db_name)
 
-	db, err := sql.Open("postgres", psqlInfo)
+	db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
 		return fmt.Errorf("\nError when trying to open the database. %w", err)
 	}
-
 	dbh.db = db
+
+	if !dbh.clientsTableExists() {
+		err = dbh.createClientsTable()
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -73,8 +80,6 @@ func (dbh *DbHandler) addClient(client DbClient) {
 	_, err := dbh.db.Exec(sqlStatement, client.ip, client.nickname)
 	if err != nil {
 		log.Printf("\nError inserting record into database table. %s", err.Error())
-	} else {
-		log.Println("Successfully added record to database table")
 	}
 
 	dbh.dbClients = append(dbh.dbClients, client)
@@ -118,4 +123,29 @@ func (dbh *DbHandler) PullClients() {
 	}
 
 	dbh.dbClients = res
+}
+
+func (dbh *DbHandler) clientsTableExists() bool {
+	sqlStatement := `SELECT 1 FROM clients_table`
+	rows, err := dbh.db.Query(sqlStatement)
+	if err != nil {
+		return false
+	} else {
+		rows.Close()
+		return true
+	}
+}
+
+func (dbh *DbHandler) createClientsTable() error {
+	sqlStatement := `CREATE TABLE clients_table (
+		ip_address text,
+		nickname text
+	);`
+
+	_, err := dbh.db.Exec(sqlStatement)
+	if err != nil {
+		return fmt.Errorf("\nCannot create table %w", err)
+	}
+
+	return nil
 }
