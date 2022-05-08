@@ -36,7 +36,8 @@ func (c *client) receiveMessage() {
 			}
 			return
 		} else if err != nil {
-			c.sendMessage(fmt.Sprintf("Error while trying to receive your message: %s", err.Error()))
+			c.sendMessage(fmt.Sprintf("Error while trying to receive your message: %v", err))
+			continue
 		}
 
 		msg = strings.Trim(msg, "\r\n")

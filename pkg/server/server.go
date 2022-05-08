@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net"
 	"strings"
 	"time"
@@ -17,7 +18,6 @@ type server struct {
 
 // NewServer creates and returns a pointer to a new server
 func NewServer(handler *DbHandler) *server {
-
 	return &server{
 		commands: make(chan command),
 		handler:  handler,
@@ -32,6 +32,7 @@ func (s *server) NewClient(conn net.Conn) {
 	client_ip := conn.RemoteAddr().(*net.TCPAddr).IP.String()
 	nickname := "Anonymous"
 
+	// check if client already exists in db
 	for _, cli := range s.handler.dbClients {
 		if cli.ip == client_ip {
 			nickname = cli.nickname
@@ -44,21 +45,24 @@ func (s *server) NewClient(conn net.Conn) {
 		nickname: nickname,
 		cmd:      s.commands,
 	}
+
+	// add to list of clients currently online
 	s.currentClients = append(s.currentClients, c)
+
 	if !alreadyExists {
 		new_client := DbClient{
 			ip:       client_ip,
 			nickname: nickname,
 		}
 		s.handler.addClient(new_client)
-		msg = "\n\nWelcome to the chat server"
-		msg += "\nCommands: /nick new_nickname - Change your nickname"
+		msg = "\n\nWelcome to the chat server!\nCommands: /nick new_nickname - Change your nickname"
 	} else {
-		msg = "\n\nWelcome back to the chat server, " + nickname
-		msg += "\nCommands: /nick new_nickname - Change your nickname"
+		msg = fmt.Sprintf("\n\nWelcome back to the chat server, %s!\nCommands: /nick new_nickname - Change your nickname", nickname)
 	}
 
 	c.sendMessage(msg)
+
+	// dedicate a goroutine to each client
 	go c.receiveMessage()
 }
 
@@ -81,7 +85,7 @@ func (s *server) ExecCommands() {
 // database
 func (s *server) changeNick(c *client, args []string) {
 	if len(args) > 0 {
-		msg := c.nickname + " changed their nickname to " + args[0]
+		msg := fmt.Sprintf("%s changed their nickname to %s", c.nickname, args[0])
 		s.broadcastMessage("Server", msg)
 		c.nickname = args[0]
 		db_cli := DbClient{
@@ -101,7 +105,7 @@ func (s *server) changeNick(c *client, args []string) {
 func (s *server) broadcastMessage(author string, msg string) {
 	t := time.Now().Format("15:04:05")
 	for _, c := range s.currentClients {
-		c.sendMessage("\n" + t + " " + author + ": " + msg)
+		c.sendMessage(fmt.Sprintf("\n%s %s: %s", t, author, msg))
 	}
 }
 
